@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -618,7 +619,11 @@ func apiVersionForPackage(pkg *types.Package) (string, string, error) {
 	version := pkg.Name // assumes basename (i.e. "v1" in "core/v1") is apiVersion
 	r := `^v\d+((alpha|beta)[a-z0-9]+)?$`
 	if !regexp.MustCompile(r).MatchString(version) {
-		return "", "", errors.Errorf("cannot infer kubernetes apiVersion of go package %s (basename %q doesn't match expected pattern %s that's used to determine apiVersion)", pkg.Path, version, r)
+		parentVersion := path.Base(path.Dir(pkg.Path))
+		if !regexp.MustCompile(r).MatchString(parentVersion) {
+			return "", "", errors.Errorf("cannot infer kubernetes apiVersion of go package %s (basenames %q and %q don't match expected pattern %s that's used to determine apiVersion)", pkg.Path, version, parentVersion, r)
+		}
+		version = parentVersion
 	}
 	return group, version, nil
 }
