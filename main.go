@@ -410,7 +410,14 @@ func apiGroupForType(t *types.Type, typePkgMap map[*types.Type]*apiPackage) stri
 // anchorIDForLocalType returns the #anchor string for the local type
 func anchorIDForLocalType(t *types.Type, typePkgMap map[*types.Type]*apiPackage) string {
 	t = tryDereference(t)
-	return fmt.Sprintf("%s.%s", apiGroupForType(t, typePkgMap), t.Name.Name)
+	name := t.Name.Name
+	if pkg, ok := typePkgMap[t]; ok {
+		pkgName := path.Base(t.Name.Package)
+		if pkgName != "." && pkgName != "/" && pkgName != pkg.apiVersion {
+			name = pkgName + "." + name
+		}
+	}
+	return fmt.Sprintf("%s.%s", apiGroupForType(t, typePkgMap), name)
 }
 
 // linkForType returns an anchor to the type if it can be generated. returns
